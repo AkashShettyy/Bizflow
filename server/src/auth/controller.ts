@@ -1,6 +1,10 @@
 import type { Request, Response } from "express";
-import { loginUser,registerUser } from "./service.js";
-import {loginSchema, registerSchema } from "./validation.js";
+import { loginUser, registerUser } from "./service.js";
+import { loginSchema, registerSchema } from "./validation.js";
+import User from "../models/user.js";
+import authenticate, {
+  type AuthenticatedRequest,
+} from "../middlewares/auth.js";
 
 export const register = async (
   req: Request,
@@ -28,5 +32,43 @@ export const login = async (
     success: true,
     message: "Login successful",
     data: result,
+  });
+};
+
+export const getMe = async (
+  req: AuthenticatedRequest,
+  res: Response,
+): Promise<void> => {
+  if (!req.user) {
+    res.status(401).json({
+      success: false,
+      message: "Authentication required",
+    });
+    return;
+  }
+
+  const user = await User.findById(req.user.userId).select(
+    "-password",
+  );
+
+  if (!user) {
+    res.status(404).json({
+      success: false,
+      message: "User not found",
+    });
+    return;
+  }
+
+  res.status(200).json({
+    success: true,
+    data: {
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+      },
+      tenantId: req.user.tenantId,
+      role: req.user.role,
+    },
   });
 };
