@@ -3,10 +3,11 @@ import User from "../models/user.js";
 import Tenant from "../models/tenant.js";
 import Membership from "../models/membership.js";
 import { hashPassword, comparePassword} from "../utils/password.js";
-import type { RegisterInput, LoginInput } from "./validation.js";
+import type { RegisterInput, LoginInput, RefreshInput} from "./validation.js";
 import {
   generateAccessToken,
   generateRefreshToken,
+  verifyRefreshToken,
 } from "../utils/token.js";
 
 export const registerUser = async (input: RegisterInput) => {
@@ -156,4 +157,22 @@ export const loginUser = async (input: LoginInput) => {
     accessToken,
     refreshToken,
   };
+};
+
+export const refreshAccessToken = (input: RefreshInput) => {
+  try {
+    const payload = verifyRefreshToken(input.refreshToken);
+
+    const accessToken = generateAccessToken({
+      userId: payload.userId,
+      tenantId: payload.tenantId,
+      role: payload.role,
+    });
+
+    return {
+      accessToken,
+    };
+  } catch {
+    throw new Error("Invalid or expired refresh token");
+  }
 };

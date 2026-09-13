@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
-import { loginUser, registerUser } from "./service.js";
-import { loginSchema, registerSchema } from "./validation.js";
+import { loginUser, registerUser , refreshAccessToken} from "./service.js";
+import { loginSchema, registerSchema, refreshSchema } from "./validation.js";
 import User from "../models/user.js";
 import authenticate, {
   type AuthenticatedRequest,
@@ -70,5 +70,19 @@ export const getMe = async (
       tenantId: req.user.tenantId,
       role: req.user.role,
     },
+  });
+};
+
+export const refresh = async (
+  req: Request,
+  res: Response,
+): Promise<void> => {
+  const input = refreshSchema.parse(req.body);
+  const result = refreshAccessToken(input);
+
+  res.status(200).json({
+    success: true,
+    message: "Access token refreshed",
+    data: result,
   });
 };
