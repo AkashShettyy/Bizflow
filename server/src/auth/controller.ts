@@ -2,9 +2,7 @@ import type { Request, Response } from "express";
 import { loginUser, registerUser , refreshAccessToken} from "./service.js";
 import { loginSchema, registerSchema, refreshSchema } from "./validation.js";
 import User from "../models/user.js";
-import authenticate, {
-  type AuthenticatedRequest,
-} from "../middlewares/auth.js";
+import type { AuthenticatedRequest } from "../middlewares/auth.js";
 
 export const register = async (
   req: Request,
@@ -84,5 +82,15 @@ export const refresh = async (
     success: true,
     message: "Access token refreshed",
     data: result,
+  });
+};
+
+export const adminTest = async (
+  _req: AuthenticatedRequest,
+  res: Response,
+): Promise<void> => {
+  res.status(200).json({
+    success: true,
+    message: "You have administrative access",
   });
 };
