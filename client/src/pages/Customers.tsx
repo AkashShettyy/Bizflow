@@ -34,6 +34,7 @@ function Customers() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
 
   const fetchCustomers = async () => {
     try {
@@ -89,6 +90,68 @@ function Customers() {
     }));
   };
 
+  const handleUpdate = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!editingCustomer) {
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setError("");
+
+      await api.patch(`/customers/${editingCustomer._id}`, {
+        name: form.name,
+        email: form.email || undefined,
+        phone: form.phone || undefined,
+        company: form.company || undefined,
+        status: form.status,
+      });
+
+      setEditingCustomer(null);
+      setForm(initialForm);
+
+      await fetchCustomers();
+    } catch (error) {
+      console.error(error);
+      setError("Failed to update customer");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (customerId: string) => {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this customer?",
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setError("");
+
+      await api.delete(`/customers/${customerId}`);
+
+      await fetchCustomers();
+    } catch (error) {
+      console.error(error);
+      setError("Failed to delete customer");
+    }
+  };
+  const handleEdit = (customer: Customer) => {
+    setEditingCustomer(customer);
+
+    setForm({
+      name: customer.name,
+      email: customer.email || "",
+      phone: customer.phone || "",
+      company: customer.company || "",
+      status: customer.status,
+    });
+  };
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -114,6 +177,13 @@ function Customers() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const closeForm = () => {
+    setShowForm(false);
+    setEditingCustomer(null);
+    setForm(initialForm);
+    setError("");
   };
 
   return (
@@ -180,6 +250,9 @@ function Customers() {
                   <th className="px-6 py-3 text-xs font-semibold uppercase text-slate-500">
                     Status
                   </th>
+                  <th className="px-6 py-3 text-xs font-semibold uppercase text-slate-500">
+                    Actions
+                  </th>
                 </tr>
               </thead>
 
@@ -207,6 +280,23 @@ function Customers() {
                         {customer.status}
                       </span>
                     </td>
+                    <td className="px-6 py-4">
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleEdit(customer)}
+                          className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                        >
+                          Edit
+                        </button>
+
+                        <button
+                          onClick={() => handleDelete(customer._id)}
+                          className="rounded-md border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -215,29 +305,34 @@ function Customers() {
         )}
       </div>
 
-      {showForm && (
+      {(showForm || editingCustomer) && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
           <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-xl font-bold text-slate-900">
-                  Add Customer
+                  {editingCustomer ? "Edit Customer" : "Add Customer"}
                 </h3>
 
                 <p className="mt-1 text-sm text-slate-500">
-                  Create a new customer.
+                  {editingCustomer
+                    ? "Update customer information."
+                    : "Create a new customer."}
                 </p>
               </div>
 
               <button
-                onClick={() => setShowForm(false)}
+                onClick={closeForm}
                 className="text-xl text-slate-400 hover:text-slate-700"
               >
                 ×
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+            <form
+              onSubmit={editingCustomer ? handleUpdate : handleSubmit}
+              className="mt-6 space-y-4"
+            >
               <input
                 name="name"
                 value={form.name}
@@ -286,7 +381,7 @@ function Customers() {
               <div className="flex justify-end gap-3 pt-4">
                 <button
                   type="button"
-                  onClick={() => setShowForm(false)}
+                  onClick={closeForm}
                   className="rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
                 >
                   Cancel
@@ -297,7 +392,13 @@ function Customers() {
                   disabled={saving}
                   className="rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
                 >
-                  {saving ? "Creating..." : "Create Customer"}
+                  {saving
+                    ? editingCustomer
+                      ? "Updating..."
+                      : "Creating..."
+                    : editingCustomer
+                      ? "Update Customer"
+                      : "Create Customer"}
                 </button>
               </div>
             </form>
