@@ -6,12 +6,7 @@ import {
   type ReactNode,
 } from "react";
 import api from "../services/api.js";
-import type {
-  LoginResponse,
-  Role,
-  Tenant,
-  User,
-} from "../types/auth.js";
+import type { LoginResponse, Role, Tenant, User } from "../types/auth.js";
 
 interface AuthContextValue {
   user: User | null;
@@ -23,17 +18,13 @@ interface AuthContextValue {
   logout: () => void;
 }
 
-const AuthContext = createContext<AuthContextValue | undefined>(
-  undefined,
-);
+const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 interface AuthProviderProps {
   children: ReactNode;
 }
 
-export const AuthProvider = ({
-  children,
-}: AuthProviderProps) => {
+export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [role, setRole] = useState<Role | null>(null);
@@ -42,10 +33,7 @@ export const AuthProvider = ({
   );
   const [loading, setLoading] = useState(true);
 
-  const login = async (
-    email: string,
-    password: string,
-  ): Promise<void> => {
+  const login = async (email: string, password: string): Promise<void> => {
     const response = await api.post<{
       success: boolean;
       data: LoginResponse;
@@ -89,21 +77,16 @@ export const AuthProvider = ({
           success: boolean;
           data: {
             user: User;
-            tenantId: string;
+            tenant: Tenant;
             role: Role;
           };
         }>("/auth/me");
-
         const data = response.data.data;
 
         setUser(data.user);
         setRole(data.role);
 
-        setTenant({
-          id: data.tenantId,
-          name: "",
-          slug: "",
-        });
+        setTenant(data.tenant);
       } catch {
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
@@ -141,9 +124,7 @@ export const useAuth = (): AuthContextValue => {
   const context = useContext(AuthContext);
 
   if (!context) {
-    throw new Error(
-      "useAuth must be used inside AuthProvider",
-    );
+    throw new Error("useAuth must be used inside AuthProvider");
   }
 
   return context;
