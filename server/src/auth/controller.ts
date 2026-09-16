@@ -3,6 +3,7 @@ import { loginUser, registerUser , refreshAccessToken} from "./service.js";
 import { loginSchema, registerSchema, refreshSchema } from "./validation.js";
 import User from "../models/user.js";
 import type { AuthenticatedRequest } from "../middlewares/auth.js";
+import Membership from "../models/membership.js";
 
 export const register = async (
   req: Request,
@@ -45,9 +46,7 @@ export const getMe = async (
     return;
   }
 
-  const user = await User.findById(req.user.userId).select(
-    "-password",
-  );
+  const user = await User.findById(req.user.userId).select("-password");
 
   if (!user) {
     res.status(404).json({
@@ -57,6 +56,26 @@ export const getMe = async (
     return;
   }
 
+  const membership = await Membership.findOne({
+    user: user._id,
+    tenant: req.user.tenantId,
+    isActive: true,
+  }).populate("tenant");
+
+  if (!membership) {
+    res.status(404).json({
+      success: false,
+      message: "Active membership not found",
+    });
+    return;
+  }
+
+  const tenant = membership.tenant as unknown as {
+    _id: import("mongoose").Types.ObjectId;
+    name: string;
+    slug: string;
+  };
+
   res.status(200).json({
     success: true,
     data: {
@@ -65,8 +84,12 @@ export const getMe = async (
         name: user.name,
         email: user.email,
       },
-      tenantId: req.user.tenantId,
-      role: req.user.role,
+      tenant: {
+        id: tenant._id,
+        name: tenant.name,
+        slug: tenant.slug,
+      },
+      role: membership.role,
     },
   });
 };
