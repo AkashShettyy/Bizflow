@@ -1,17 +1,24 @@
 import {
   createContext,
   useContext,
+  useEffect,
   useState,
   type ReactNode,
 } from "react";
 import api from "../services/api.js";
-import type { LoginResponse, User, Tenant, Role } from "../types/auth.js";
+import type {
+  LoginResponse,
+  Role,
+  Tenant,
+  User,
+} from "../types/auth.js";
 
 interface AuthContextValue {
   user: User | null;
   tenant: Tenant | null;
   role: Role | null;
   accessToken: string | null;
+  loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
 }
@@ -31,8 +38,9 @@ export const AuthProvider = ({
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [role, setRole] = useState<Role | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(
-    null,
+    localStorage.getItem("accessToken"),
   );
+  const [loading, setLoading] = useState(true);
 
   const login = async (
     email: string,
@@ -67,6 +75,51 @@ export const AuthProvider = ({
     localStorage.removeItem("refreshToken");
   };
 
+  useEffect(() => {
+    const restoreSession = async () => {
+      const token = localStorage.getItem("accessToken");
+
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await api.get<{
+          success: boolean;
+          data: {
+            user: User;
+            tenantId: string;
+            role: Role;
+          };
+        }>("/auth/me");
+
+        const data = response.data.data;
+
+        setUser(data.user);
+        setRole(data.role);
+
+        setTenant({
+          id: data.tenantId,
+          name: "",
+          slug: "",
+        });
+      } catch {
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+
+        setAccessToken(null);
+        setUser(null);
+        setTenant(null);
+        setRole(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    restoreSession();
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{
@@ -74,6 +127,7 @@ export const AuthProvider = ({
         tenant,
         role,
         accessToken,
+        loading,
         login,
         logout,
       }}
