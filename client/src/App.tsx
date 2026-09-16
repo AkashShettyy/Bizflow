@@ -1,10 +1,21 @@
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import ProtectedRoute from "./components/ProtectedRoute.js";
+import Dashboard from "./pages/Dashboard.js";
+import Login from "./pages/Login.js";
+
 function App() {
   return (
-    <div className="flex min-h-screen items-center justify-center">
-      <h1 className="text-3xl font-bold">
-        BizFlow
-      </h1>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={<Login />} />
+
+        <Route element={<ProtectedRoute />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+        </Route>
+
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
