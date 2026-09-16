@@ -3,6 +3,7 @@ import ProtectedRoute from "./components/ProtectedRoute.js";
 import AppLayout from "./layouts/AppLayout.js";
 import Dashboard from "./pages/Dashboard.js";
 import Login from "./pages/Login.js";
+import Customers from "./pages/Customers.js";
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route element={<AppLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/customers" element={<Customers />} />
           </Route>
         </Route>
 
