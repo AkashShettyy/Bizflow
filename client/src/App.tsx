@@ -6,6 +6,7 @@ import Login from "./pages/Login.js";
 import Customers from "./pages/Customers.js";
 import Projects from "./pages/Projects.js";
 import Tasks from "./pages/Tasks.js";
+import CustomerDetails from "./pages/CustomerDetails.js";
 
 function App() {
   return (
@@ -16,7 +17,10 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route element={<AppLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
+
             <Route path="/customers" element={<Customers />} />
+            <Route path="/customers/:id" element={<CustomerDetails />} />
+
             <Route path="/projects" element={<Projects />} />
             <Route path="/tasks" element={<Tasks />} />
           </Route>

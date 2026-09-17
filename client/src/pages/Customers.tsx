@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import api from "../services/api.js";
+import { useNavigate } from "react-router-dom";
 
 interface Customer {
   _id: string;
@@ -27,6 +28,7 @@ const initialForm: CustomerForm = {
 };
 
 function Customers() {
+  const navigate = useNavigate();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [form, setForm] = useState<CustomerForm>(initialForm);
 
@@ -330,15 +332,46 @@ function Customers() {
 
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-2">
+                        {/* View */}
+                        <button
+                          onClick={() => navigate(`/customers/${customer._id}`)}
+                          title="View customer"
+                          className="rounded-lg border border-slate-300 p-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth={1.8}
+                            stroke="currentColor"
+                            className="h-4 w-4"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M2.036 12.322a1.012 1.012 0 010-.644C3.423 7.51 7.36 5 12 5c4.64 0 8.577 2.51 9.964 6.678.052.208.052.426 0 .644C20.577 16.49 16.64 19 12 19c-4.64 0-8.577-2.51-9.964-6.678z"
+                            />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                            />
+                          </svg>
+                        </button>
+
+                        {/* Edit */}
                         <button
                           onClick={() => handleEdit(customer)}
+                          title="Edit customer"
                           className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100"
                         >
                           Edit
                         </button>
 
+                        {/* Delete */}
                         <button
                           onClick={() => handleDelete(customer._id)}
+                          title="Delete customer"
                           className="rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50"
                         >
                           Delete
