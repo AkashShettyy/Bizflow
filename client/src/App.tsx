@@ -5,6 +5,7 @@ import Dashboard from "./pages/Dashboard.js";
 import Login from "./pages/Login.js";
 import Customers from "./pages/Customers.js";
 import Projects from "./pages/Projects.js";
+import Tasks from "./pages/Tasks.js";
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/customers" element={<Customers />} />
             <Route path="/projects" element={<Projects />} />
+            <Route path="/tasks" element={<Tasks />} />
           </Route>
         </Route>
 
