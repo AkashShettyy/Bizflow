@@ -6,6 +6,7 @@ import authRoutes from "./auth/routes.js";
 import customerRoutes from "./customers/routes.js";
 import projectRoutes from "./projects/routes.js";
 import errorHandler from "./middlewares/error.js";
+import taskRoutes from "./tasks/routes.js";
 
 
 const app = express();
@@ -26,6 +27,7 @@ app.get("/api/health", (_req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/customers", customerRoutes);
 app.use("/api/projects", projectRoutes);
+app.use("/api/tasks", taskRoutes);
 
 app.use(errorHandler);
 
