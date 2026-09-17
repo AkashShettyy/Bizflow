@@ -31,8 +31,8 @@ interface Task {
         _id: string;
         name: string;
       };
-  status: "todo" | "in_progress" | "review" | "completed" | "cancelled";
-  priority: "low" | "medium" | "high" | "urgent";
+  status?: "todo" | "in_progress" | "review" | "completed" | "cancelled";
+  priority?: "low" | "medium" | "high" | "urgent";
   dueDate?: string;
 }
 
@@ -115,7 +115,6 @@ function ProjectDetails() {
 
     return classes[status];
   };
-
   const getPriorityClass = (priority: Project["priority"]) => {
     const classes: Record<Project["priority"], string> = {
       low: "bg-slate-100 text-slate-600",
@@ -126,8 +125,9 @@ function ProjectDetails() {
 
     return classes[priority];
   };
+
   const getTaskStatusClass = (status: Task["status"]) => {
-    const classes: Record<Task["status"], string> = {
+    const classes: Record<NonNullable<Task["status"]>, string> = {
       todo: "bg-slate-100 text-slate-700",
       in_progress: "bg-blue-100 text-blue-700",
       review: "bg-amber-100 text-amber-700",
@@ -135,18 +135,18 @@ function ProjectDetails() {
       cancelled: "bg-red-100 text-red-700",
     };
 
-    return classes[status];
+    return status ? classes[status] : "bg-slate-100 text-slate-500";
   };
 
   const getTaskPriorityClass = (priority: Task["priority"]) => {
-    const classes: Record<Task["priority"], string> = {
+    const classes: Record<NonNullable<Task["priority"]>, string> = {
       low: "bg-slate-100 text-slate-600",
       medium: "bg-blue-100 text-blue-700",
       high: "bg-orange-100 text-orange-700",
       urgent: "bg-red-100 text-red-700",
     };
 
-    return classes[priority];
+    return priority ? classes[priority] : "bg-slate-100 text-slate-500";
   };
 
   const formatDate = (date?: string) => {
@@ -462,7 +462,9 @@ function ProjectDetails() {
                           task.status,
                         )}`}
                       >
-                        {task.status.replace("_", " ")}
+                        {task.status
+                          ? task.status.replace("_", " ")
+                          : "Unknown"}
                       </span>
                     </td>
 
@@ -472,7 +474,7 @@ function ProjectDetails() {
                           task.priority,
                         )}`}
                       >
-                        {task.priority}
+                        {task.priority || "Unknown"}
                       </span>
                     </td>
 
@@ -482,7 +484,11 @@ function ProjectDetails() {
 
                     <td className="px-6 py-4 text-right">
                       <button
-                        onClick={() => navigate("/tasks")}
+                        onClick={() =>
+                          navigate(`/tasks/${task._id}`, {
+                            state: { projectId: id },
+                          })
+                        }
                         title="View task"
                         className="rounded-lg border border-slate-300 p-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                       >
