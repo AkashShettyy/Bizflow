@@ -29,12 +29,16 @@ const initialForm: CustomerForm = {
 function Customers() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [form, setForm] = useState<CustomerForm>(initialForm);
+
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+
   const [showForm, setShowForm] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
 
   const fetchCustomers = async () => {
     try {
@@ -49,7 +53,7 @@ function Customers() {
       setCustomers(response.data.data);
     } catch (error) {
       console.error(error);
-      setError("Failed to load customers");
+      setError("Failed to load customers.");
     } finally {
       setLoading(false);
     }
@@ -62,22 +66,19 @@ function Customers() {
   const filteredCustomers = useMemo(() => {
     const value = search.toLowerCase().trim();
 
-    if (!value) {
-      return customers;
-    }
+    return customers.filter((customer) => {
+      const matchesSearch =
+        !value ||
+        [customer.name, customer.email, customer.phone, customer.company]
+          .filter(Boolean)
+          .some((field) => field!.toLowerCase().includes(value));
 
-    return customers.filter((customer) =>
-      [
-        customer.name,
-        customer.email,
-        customer.phone,
-        customer.company,
-        customer.status,
-      ]
-        .filter(Boolean)
-        .some((field) => field!.toLowerCase().includes(value)),
-    );
-  }, [customers, search]);
+      const matchesStatus =
+        statusFilter === "all" || customer.status === statusFilter;
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [customers, search, statusFilter]);
 
   const handleChange = (
     event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -88,6 +89,38 @@ function Customers() {
       ...previous,
       [name]: value,
     }));
+  };
+
+  const closeForm = () => {
+    setShowForm(false);
+    setEditingCustomer(null);
+    setForm(initialForm);
+    setError("");
+  };
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    try {
+      setSaving(true);
+      setError("");
+
+      await api.post("/customers", {
+        name: form.name,
+        email: form.email || undefined,
+        phone: form.phone || undefined,
+        company: form.company || undefined,
+        status: form.status,
+      });
+
+      closeForm();
+      await fetchCustomers();
+    } catch (error) {
+      console.error(error);
+      setError("Failed to create customer.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleUpdate = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -109,16 +142,29 @@ function Customers() {
         status: form.status,
       });
 
-      setEditingCustomer(null);
-      setForm(initialForm);
-
+      closeForm();
       await fetchCustomers();
     } catch (error) {
       console.error(error);
-      setError("Failed to update customer");
+      setError("Failed to update customer.");
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleEdit = (customer: Customer) => {
+    setEditingCustomer(customer);
+
+    setForm({
+      name: customer.name,
+      email: customer.email || "",
+      phone: customer.phone || "",
+      company: customer.company || "",
+      status: customer.status,
+    });
+
+    setShowForm(true);
+    setError("");
   };
 
   const handleDelete = async (customerId: string) => {
@@ -138,56 +184,23 @@ function Customers() {
       await fetchCustomers();
     } catch (error) {
       console.error(error);
-      setError("Failed to delete customer");
-    }
-  };
-  const handleEdit = (customer: Customer) => {
-    setEditingCustomer(customer);
-
-    setForm({
-      name: customer.name,
-      email: customer.email || "",
-      phone: customer.phone || "",
-      company: customer.company || "",
-      status: customer.status,
-    });
-  };
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    try {
-      setSaving(true);
-      setError("");
-
-      await api.post("/customers", {
-        name: form.name,
-        email: form.email || undefined,
-        phone: form.phone || undefined,
-        company: form.company || undefined,
-        status: form.status,
-      });
-
-      setForm(initialForm);
-      setShowForm(false);
-
-      await fetchCustomers();
-    } catch (error) {
-      console.error(error);
-      setError("Failed to create customer");
-    } finally {
-      setSaving(false);
+      setError("Failed to delete customer.");
     }
   };
 
-  const closeForm = () => {
-    setShowForm(false);
-    setEditingCustomer(null);
-    setForm(initialForm);
-    setError("");
+  const getStatusClass = (status: Customer["status"]) => {
+    const classes: Record<Customer["status"], string> = {
+      lead: "bg-slate-100 text-slate-700",
+      active: "bg-blue-100 text-blue-700",
+      inactive: "bg-red-100 text-red-700",
+    };
+
+    return classes[status];
   };
 
   return (
-    <div>
+    <div className="space-y-6">
+      {/* Header */}
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
           <h2 className="text-2xl font-bold text-slate-900">Customers</h2>
@@ -198,100 +211,135 @@ function Customers() {
         </div>
 
         <button
-          onClick={() => setShowForm(true)}
-          className="rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800"
+          onClick={() => {
+            setEditingCustomer(null);
+            setForm(initialForm);
+            setError("");
+            setShowForm(true);
+          }}
+          className="rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800"
         >
           + Add Customer
         </button>
       </div>
 
+      {/* Error */}
       {error && (
-        <div className="mt-6 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600">
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </div>
       )}
 
-      <div className="mt-6 rounded-xl border bg-white">
-        <div className="border-b p-4">
-          <input
-            type="text"
-            placeholder="Search customers..."
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            className="w-full max-w-md rounded-lg border border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-slate-900"
-          />
-        </div>
+      {/* Filters */}
+      <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 sm:flex-row">
+        <input
+          type="text"
+          placeholder="Search customers..."
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          className="flex-1 rounded-lg border border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-slate-500"
+        />
 
+        <select
+          value={statusFilter}
+          onChange={(event) => setStatusFilter(event.target.value)}
+          className="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none focus:border-slate-500"
+        >
+          <option value="all">All Statuses</option>
+          <option value="lead">Lead</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+      </div>
+
+      {/* Customers table */}
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
         {loading ? (
-          <div className="p-8 text-center text-sm text-slate-500">
-            Loading customers...
+          <div className="flex min-h-48 items-center justify-center">
+            <p className="text-sm text-slate-500">Loading customers...</p>
           </div>
         ) : filteredCustomers.length === 0 ? (
-          <div className="p-8 text-center text-sm text-slate-500">
-            No customers found.
+          <div className="flex min-h-48 flex-col items-center justify-center">
+            <p className="font-medium text-slate-700">No customers found</p>
+
+            <p className="mt-1 text-sm text-slate-500">
+              Create your first customer to get started.
+            </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead className="border-b bg-slate-50">
+            <table className="w-full min-w-[900px]">
+              <thead className="border-b border-slate-200 bg-slate-50">
                 <tr>
-                  <th className="px-6 py-3 text-xs font-semibold uppercase text-slate-500">
-                    Name
+                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Customer
                   </th>
-                  <th className="px-6 py-3 text-xs font-semibold uppercase text-slate-500">
+
+                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                     Company
                   </th>
-                  <th className="px-6 py-3 text-xs font-semibold uppercase text-slate-500">
+
+                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                     Email
                   </th>
-                  <th className="px-6 py-3 text-xs font-semibold uppercase text-slate-500">
+
+                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                     Phone
                   </th>
-                  <th className="px-6 py-3 text-xs font-semibold uppercase text-slate-500">
+
+                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-xs font-semibold uppercase text-slate-500">
+
+                  <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
                     Actions
                   </th>
                 </tr>
               </thead>
 
-              <tbody className="divide-y">
+              <tbody className="divide-y divide-slate-100">
                 {filteredCustomers.map((customer) => (
                   <tr key={customer._id} className="hover:bg-slate-50">
-                    <td className="px-6 py-4 text-sm font-medium text-slate-900">
-                      {customer.name}
+                    <td className="px-6 py-4">
+                      <p className="font-medium text-slate-900">
+                        {customer.name}
+                      </p>
                     </td>
 
                     <td className="px-6 py-4 text-sm text-slate-600">
-                      {customer.company || "-"}
+                      {customer.company || "—"}
                     </td>
 
                     <td className="px-6 py-4 text-sm text-slate-600">
-                      {customer.email || "-"}
+                      {customer.email || "—"}
                     </td>
 
                     <td className="px-6 py-4 text-sm text-slate-600">
-                      {customer.phone || "-"}
+                      {customer.phone || "—"}
                     </td>
 
                     <td className="px-6 py-4">
-                      <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium capitalize text-slate-700">
+                      <span
+                        className={`rounded-full px-2.5 py-1 text-xs font-medium capitalize ${getStatusClass(
+                          customer.status,
+                        )}`}
+                      >
                         {customer.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex gap-2">
+
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex justify-end gap-2">
                         <button
                           onClick={() => handleEdit(customer)}
-                          className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+                          className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100"
                         >
                           Edit
                         </button>
 
                         <button
                           onClick={() => handleDelete(customer._id)}
-                          className="rounded-md border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50"
+                          className="rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50"
                         >
                           Delete
                         </button>
@@ -305,12 +353,13 @@ function Customers() {
         )}
       </div>
 
-      {(showForm || editingCustomer) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
-            <div className="flex items-center justify-between">
+      {/* Modal */}
+      {showForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5">
               <div>
-                <h3 className="text-xl font-bold text-slate-900">
+                <h3 className="text-lg font-semibold text-slate-900">
                   {editingCustomer ? "Edit Customer" : "Add Customer"}
                 </h3>
 
@@ -323,7 +372,7 @@ function Customers() {
 
               <button
                 onClick={closeForm}
-                className="text-xl text-slate-400 hover:text-slate-700"
+                className="text-2xl text-slate-400 hover:text-slate-700"
               >
                 ×
               </button>
@@ -331,54 +380,91 @@ function Customers() {
 
             <form
               onSubmit={editingCustomer ? handleUpdate : handleSubmit}
-              className="mt-6 space-y-4"
+              className="space-y-5 p-6"
             >
-              <input
-                name="name"
-                value={form.name}
-                onChange={handleChange}
-                placeholder="Customer name"
-                required
-                className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-slate-900"
-              />
+              {/* Name */}
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                  Customer Name
+                </label>
 
-              <input
-                name="email"
-                type="email"
-                value={form.email}
-                onChange={handleChange}
-                placeholder="Email"
-                className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-slate-900"
-              />
+                <input
+                  name="name"
+                  value={form.name}
+                  onChange={handleChange}
+                  required
+                  className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-slate-500"
+                  placeholder="Enter customer name"
+                />
+              </div>
 
-              <input
-                name="phone"
-                value={form.phone}
-                onChange={handleChange}
-                placeholder="Phone"
-                className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-slate-900"
-              />
+              {/* Company */}
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                  Company
+                </label>
 
-              <input
-                name="company"
-                value={form.company}
-                onChange={handleChange}
-                placeholder="Company"
-                className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-slate-900"
-              />
+                <input
+                  name="company"
+                  value={form.company}
+                  onChange={handleChange}
+                  className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-slate-500"
+                  placeholder="Enter company name"
+                />
+              </div>
 
-              <select
-                name="status"
-                value={form.status}
-                onChange={handleChange}
-                className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none focus:border-slate-900"
-              >
-                <option value="lead">Lead</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
+              {/* Email + Phone */}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                    Email
+                  </label>
 
-              <div className="flex justify-end gap-3 pt-4">
+                  <input
+                    name="email"
+                    type="email"
+                    value={form.email}
+                    onChange={handleChange}
+                    className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-slate-500"
+                    placeholder="customer@example.com"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                    Phone
+                  </label>
+
+                  <input
+                    name="phone"
+                    value={form.phone}
+                    onChange={handleChange}
+                    className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-slate-500"
+                    placeholder="Enter phone number"
+                  />
+                </div>
+              </div>
+
+              {/* Status */}
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                  Status
+                </label>
+
+                <select
+                  name="status"
+                  value={form.status}
+                  onChange={handleChange}
+                  className="w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm outline-none focus:border-slate-500"
+                >
+                  <option value="lead">Lead</option>
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
+
+              {/* Buttons */}
+              <div className="flex justify-end gap-3 border-t border-slate-200 pt-5">
                 <button
                   type="button"
                   onClick={closeForm}
@@ -390,7 +476,7 @@ function Customers() {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60"
+                  className="rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {saving
                     ? editingCustomer
