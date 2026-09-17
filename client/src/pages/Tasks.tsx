@@ -94,11 +94,12 @@ function Tasks() {
 
   const fetchUsers = async () => {
     try {
-      /*
-       * We will connect this to the users endpoint once
-       * User Management is implemented in BizFlow.
-       */
-      setUsers([]);
+      const response = await api.get<{
+        success: boolean;
+        data: User[];
+      }>("/users");
+
+      setUsers(response.data.data);
     } catch {
       setError("Failed to load users.");
     }
