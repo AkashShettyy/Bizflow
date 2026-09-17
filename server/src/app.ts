@@ -7,6 +7,7 @@ import customerRoutes from "./customers/routes.js";
 import projectRoutes from "./projects/routes.js";
 import errorHandler from "./middlewares/error.js";
 import taskRoutes from "./tasks/routes.js";
+import userRoutes from "./users/routes.js";
 
 
 const app = express();
@@ -28,6 +29,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/customers", customerRoutes);
 app.use("/api/projects", projectRoutes);
 app.use("/api/tasks", taskRoutes);
+app.use("/api/users", userRoutes);
 
 app.use(errorHandler);
 
