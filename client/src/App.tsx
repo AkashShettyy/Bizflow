@@ -7,6 +7,7 @@ import Customers from "./pages/Customers.js";
 import Projects from "./pages/Projects.js";
 import Tasks from "./pages/Tasks.js";
 import CustomerDetails from "./pages/CustomerDetails.js";
+import ProjectDetails from "./pages/ProjectDetails.js";
 
 function App() {
   return (
@@ -20,8 +21,9 @@ function App() {
 
             <Route path="/customers" element={<Customers />} />
             <Route path="/customers/:id" element={<CustomerDetails />} />
-
             <Route path="/projects" element={<Projects />} />
+            <Route path="/projects" element={<Projects />} />
+            <Route path="/projects/:id" element={<ProjectDetails />} />
             <Route path="/tasks" element={<Tasks />} />
           </Route>
         </Route>
