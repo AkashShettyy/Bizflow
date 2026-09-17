@@ -21,13 +21,30 @@ interface Project {
   createdAt?: string;
   updatedAt?: string;
 }
+interface Task {
+  _id: string;
+  title: string;
+  description?: string;
+  project:
+    | string
+    | {
+        _id: string;
+        name: string;
+      };
+  status: "todo" | "in_progress" | "review" | "completed" | "cancelled";
+  priority: "low" | "medium" | "high" | "urgent";
+  dueDate?: string;
+}
 
 function ProjectDetails() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
   const [project, setProject] = useState<Project | null>(null);
+  const [tasks, setTasks] = useState<Task[]>([]);
+
   const [loading, setLoading] = useState(true);
+  const [tasksLoading, setTasksLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -55,6 +72,38 @@ function ProjectDetails() {
     fetchProject();
   }, [id]);
 
+  useEffect(() => {
+    const fetchTasks = async () => {
+      if (!id) {
+        return;
+      }
+
+      try {
+        setTasksLoading(true);
+
+        const response = await api.get<{
+          success: boolean;
+          data: Task[];
+        }>("/tasks");
+
+        const projectTasks = response.data.data.filter((task) => {
+          if (typeof task.project === "string") {
+            return task.project === id;
+          }
+
+          return task.project?._id === id;
+        });
+
+        setTasks(projectTasks);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setTasksLoading(false);
+      }
+    };
+
+    fetchTasks();
+  }, [id]);
   const getStatusClass = (status: Project["status"]) => {
     const classes: Record<Project["status"], string> = {
       planning: "bg-slate-100 text-slate-700",
@@ -69,6 +118,28 @@ function ProjectDetails() {
 
   const getPriorityClass = (priority: Project["priority"]) => {
     const classes: Record<Project["priority"], string> = {
+      low: "bg-slate-100 text-slate-600",
+      medium: "bg-blue-100 text-blue-700",
+      high: "bg-orange-100 text-orange-700",
+      urgent: "bg-red-100 text-red-700",
+    };
+
+    return classes[priority];
+  };
+  const getTaskStatusClass = (status: Task["status"]) => {
+    const classes: Record<Task["status"], string> = {
+      todo: "bg-slate-100 text-slate-700",
+      in_progress: "bg-blue-100 text-blue-700",
+      review: "bg-amber-100 text-amber-700",
+      completed: "bg-emerald-100 text-emerald-700",
+      cancelled: "bg-red-100 text-red-700",
+    };
+
+    return classes[status];
+  };
+
+  const getTaskPriorityClass = (priority: Task["priority"]) => {
+    const classes: Record<Task["priority"], string> = {
       low: "bg-slate-100 text-slate-600",
       medium: "bg-blue-100 text-blue-700",
       high: "bg-orange-100 text-orange-700",
@@ -302,7 +373,7 @@ function ProjectDetails() {
       </div>
 
       {/* Tasks */}
-      <div className="rounded-xl border border-slate-200 bg-white">
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
         <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5">
           <div>
             <h3 className="font-semibold text-slate-900">Tasks</h3>
@@ -312,23 +383,137 @@ function ProjectDetails() {
             </p>
           </div>
 
-          <button
-            onClick={() => navigate("/tasks")}
-            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
-          >
-            View Tasks
-          </button>
-        </div>
+          <div className="flex items-center gap-3">
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700">
+              {tasks.length} {tasks.length === 1 ? "Task" : "Tasks"}
+            </span>
 
-        <div className="flex min-h-32 items-center justify-center p-6">
-          <div className="text-center">
-            <p className="font-medium text-slate-700">Project tasks</p>
-
-            <p className="mt-1 text-sm text-slate-500">
-              Project-specific tasks will appear here.
-            </p>
+            <button
+              onClick={() => navigate("/tasks")}
+              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+            >
+              + Add Task
+            </button>
           </div>
         </div>
+
+        {tasksLoading ? (
+          <div className="flex min-h-32 items-center justify-center p-6">
+            <p className="text-sm text-slate-500">Loading tasks...</p>
+          </div>
+        ) : tasks.length === 0 ? (
+          <div className="flex min-h-32 flex-col items-center justify-center p-6">
+            <p className="font-medium text-slate-700">No tasks found</p>
+
+            <p className="mt-1 text-sm text-slate-500">
+              This project does not have any tasks yet.
+            </p>
+
+            <button
+              onClick={() => navigate("/tasks")}
+              className="mt-4 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+            >
+              Go to Tasks
+            </button>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[800px]">
+              <thead className="border-b border-slate-200 bg-slate-50">
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Task
+                  </th>
+
+                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Status
+                  </th>
+
+                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Priority
+                  </th>
+
+                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Due Date
+                  </th>
+
+                  <th className="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Action
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody className="divide-y divide-slate-100">
+                {tasks.map((task) => (
+                  <tr key={task._id} className="hover:bg-slate-50">
+                    <td className="px-6 py-4">
+                      <p className="font-medium text-slate-900">{task.title}</p>
+
+                      {task.description && (
+                        <p className="mt-1 max-w-md truncate text-sm text-slate-500">
+                          {task.description}
+                        </p>
+                      )}
+                    </td>
+
+                    <td className="px-6 py-4">
+                      <span
+                        className={`rounded-full px-2.5 py-1 text-xs font-medium capitalize ${getTaskStatusClass(
+                          task.status,
+                        )}`}
+                      >
+                        {task.status.replace("_", " ")}
+                      </span>
+                    </td>
+
+                    <td className="px-6 py-4">
+                      <span
+                        className={`rounded-full px-2.5 py-1 text-xs font-medium capitalize ${getTaskPriorityClass(
+                          task.priority,
+                        )}`}
+                      >
+                        {task.priority}
+                      </span>
+                    </td>
+
+                    <td className="px-6 py-4 text-sm text-slate-600">
+                      {formatDate(task.dueDate)}
+                    </td>
+
+                    <td className="px-6 py-4 text-right">
+                      <button
+                        onClick={() => navigate("/tasks")}
+                        title="View task"
+                        className="rounded-lg border border-slate-300 p-2 text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          strokeWidth={1.8}
+                          stroke="currentColor"
+                          className="h-4 w-4"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M2.036 12.322a1.012 1.012 0 010-.644C3.423 7.51 7.36 5 12 5c4.64 0 8.577 2.51 9.964 6.678.052.208.052.426 0 .644C20.577 16.49 16.64 19 12 19c-4.64 0-8.577-2.51-9.964-6.678z"
+                          />
+
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                          />
+                        </svg>
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Activity */}
