@@ -10,6 +10,7 @@ import CustomerDetails from "./pages/CustomerDetails.js";
 import ProjectDetails from "./pages/ProjectDetails.js";
 import TaskDetails from "./pages/TaskDetails.js";
 import Invoices from "./pages/Invoices.js";
+import InvoiceForm from "./pages/InvoiceForm.js";
 function App() {
   return (
     <BrowserRouter>
@@ -28,6 +29,7 @@ function App() {
             <Route path="/tasks" element={<Tasks />} />
             <Route path="/tasks/:id" element={<TaskDetails />} />
             <Route path="/invoices" element={<Invoices />} />
+            <Route path="/invoices/new" element={<InvoiceForm />} />
           </Route>
         </Route>
 
