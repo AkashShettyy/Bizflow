@@ -32,7 +32,7 @@ function AppLayout() {
   ];
 
   return (
-    <div className="flex min-h-screen bg-slate-100">
+    <div className="flex min-h-screen bg-slate-100 print:min-h-0 print:bg-white">
       <aside className="flex w-64 flex-col border-r bg-white print:hidden">
         <div className="border-b px-6 py-5">
           <h1 className="text-xl font-bold text-slate-900">BizFlow</h1>
@@ -76,7 +76,7 @@ function AppLayout() {
         </div>
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col print:min-h-0">
         <header className="flex h-16 items-center justify-between border-b bg-white px-6 print:hidden">
           <div>
             <p className="text-sm text-slate-500">Welcome back</p>
@@ -89,7 +89,7 @@ function AppLayout() {
           </div>
         </header>
 
-        <main className="flex-1 p-6 print:p-0">
+        <main className="flex-1 p-6 print:flex-none print:bg-white print:p-0">
           <Outlet />
         </main>
       </div>

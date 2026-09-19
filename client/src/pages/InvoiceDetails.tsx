@@ -188,7 +188,7 @@ function InvoiceDetails() {
   const customer = getCustomer();
 
   return (
-    <div className="invoice-page p-6 print:p-0">
+    <div className="invoice-page bg-white p-6 print:p-0">
       {/* Header */}
       <div className="mb-6 print:mb-8">
         <button

@@ -23,6 +23,7 @@ body {
   min-width: 320px;
   min-height: 100vh;
 }
+
 @media print {
   @page {
     size: A4;
@@ -36,19 +37,20 @@ body {
     background: white !important;
   }
 
-  body {
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
+  .invoice-page {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
   }
 
   .print\:hidden {
     display: none !important;
   }
 
-  .invoice-page {
-    width: 100% !important;
-    max-width: none !important;
-    margin: 0 !important;
-    padding: 0 !important;
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 }
