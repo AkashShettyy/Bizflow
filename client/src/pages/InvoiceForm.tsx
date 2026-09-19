@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import api from "../services/api.js";
 
 interface Customer {
@@ -17,6 +17,9 @@ interface InvoiceItem {
 
 function InvoiceForm() {
   const navigate = useNavigate();
+  const { id } = useParams();
+
+  const isEditMode = Boolean(id);
 
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loadingCustomers, setLoadingCustomers] = useState(true);
@@ -41,24 +44,63 @@ function InvoiceForm() {
   ]);
 
   useEffect(() => {
-    const fetchCustomers = async () => {
+    const loadData = async () => {
       try {
-        const response = await api.get<{
+        setLoadingCustomers(true);
+        setError("");
+
+        const customerResponse = await api.get<{
           success: boolean;
           data: Customer[];
         }>("/customers");
 
-        setCustomers(response.data.data);
+        setCustomers(customerResponse.data.data);
+
+        if (isEditMode && id) {
+          const invoiceResponse = await api.get<{
+            success: boolean;
+            data: {
+              customer: Customer | string;
+              invoiceNumber: string;
+              issueDate: string;
+              dueDate: string;
+              items: InvoiceItem[];
+              tax: number;
+              notes?: string;
+            };
+          }>(`/invoices/${id}`);
+
+          const invoice = invoiceResponse.data.data;
+
+          setCustomer(
+            typeof invoice.customer === "string"
+              ? invoice.customer
+              : invoice.customer._id,
+          );
+
+          setInvoiceNumber(invoice.invoiceNumber);
+
+          setIssueDate(new Date(invoice.issueDate).toISOString().split("T")[0]);
+
+          setDueDate(new Date(invoice.dueDate).toISOString().split("T")[0]);
+
+          setItems(invoice.items);
+          setTax(invoice.tax);
+          setNotes(invoice.notes || "");
+        }
       } catch (err) {
         console.error(err);
-        setError("Failed to load customers");
+
+        setError(
+          isEditMode ? "Failed to load invoice" : "Failed to load customers",
+        );
       } finally {
         setLoadingCustomers(false);
       }
     };
 
-    fetchCustomers();
-  }, []);
+    loadData();
+  }, [id, isEditMode]);
 
   const subtotal = useMemo(() => {
     return items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
@@ -127,8 +169,23 @@ function InvoiceForm() {
       return;
     }
 
+    if (!issueDate) {
+      setError("Please select an issue date");
+      return;
+    }
+
     if (!dueDate) {
       setError("Please select a due date");
+      return;
+    }
+
+    if (new Date(dueDate) < new Date(issueDate)) {
+      setError("Due date cannot be earlier than issue date");
+      return;
+    }
+
+    if (items.length === 0) {
+      setError("Please add at least one invoice item");
       return;
     }
 
@@ -142,10 +199,15 @@ function InvoiceForm() {
       return;
     }
 
+    if (tax < 0) {
+      setError("Tax cannot be negative");
+      return;
+    }
+
     try {
       setSaving(true);
 
-      await api.post("/invoices", {
+      const invoiceData = {
         customer,
         invoiceNumber: invoiceNumber.trim(),
         issueDate,
@@ -154,12 +216,23 @@ function InvoiceForm() {
         tax,
         status: "draft",
         notes: notes.trim() || undefined,
-      });
+      };
 
-      navigate("/invoices");
+      if (isEditMode && id) {
+        await api.patch(`/invoices/${id}`, invoiceData);
+
+        navigate(`/invoices/${id}`);
+      } else {
+        await api.post("/invoices", invoiceData);
+
+        navigate("/invoices");
+      }
     } catch (err) {
       console.error(err);
-      setError("Failed to create invoice");
+
+      setError(
+        isEditMode ? "Failed to update invoice" : "Failed to create invoice",
+      );
     } finally {
       setSaving(false);
     }
@@ -171,18 +244,20 @@ function InvoiceForm() {
       <div className="mb-6">
         <button
           type="button"
-          onClick={() => navigate("/invoices")}
+          onClick={() => navigate(isEditMode ? `/invoices/${id}` : "/invoices")}
           className="mb-3 text-sm text-slate-500 hover:text-slate-900"
         >
-          ← Back to Invoices
+          ← {isEditMode ? "Back to Invoice" : "Back to Invoices"}
         </button>
 
         <h1 className="text-2xl font-semibold text-slate-900">
-          Create Invoice
+          {isEditMode ? "Edit Invoice" : "Create Invoice"}
         </h1>
 
         <p className="mt-1 text-sm text-slate-500">
-          Create a new invoice for your customer
+          {isEditMode
+            ? "Update invoice information"
+            : "Create a new invoice for your customer"}
         </p>
       </div>
 
@@ -449,7 +524,9 @@ function InvoiceForm() {
           <div className="flex justify-end gap-3">
             <button
               type="button"
-              onClick={() => navigate("/invoices")}
+              onClick={() =>
+                navigate(isEditMode ? `/invoices/${id}` : "/invoices")
+              }
               className="rounded-lg border border-slate-300 px-5 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
             >
               Cancel
@@ -460,7 +537,13 @@ function InvoiceForm() {
               disabled={saving}
               className="rounded-lg bg-slate-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {saving ? "Creating..." : "Create Invoice"}
+              {saving
+                ? isEditMode
+                  ? "Updating..."
+                  : "Creating..."
+                : isEditMode
+                  ? "Update Invoice"
+                  : "Create Invoice"}
             </button>
           </div>
         </div>
