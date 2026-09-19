@@ -102,6 +102,7 @@ function InvoiceDetails() {
       maximumFractionDigits: 2,
     }).format(amount);
   };
+
   const handleStatusChange = async (status: Invoice["status"]) => {
     if (!invoice || status === invoice.status) {
       return;
@@ -126,9 +127,11 @@ function InvoiceDetails() {
       setUpdatingStatus(false);
     }
   };
+
   const handlePrint = () => {
     window.print();
   };
+
   const handleDelete = async () => {
     if (!id) {
       return;
@@ -185,9 +188,9 @@ function InvoiceDetails() {
   const customer = getCustomer();
 
   return (
-    <div className="p-6 print:p-0">
+    <div className="invoice-page p-6 print:p-0">
       {/* Header */}
-      <div className="mb-6">
+      <div className="mb-6 print:mb-8">
         <button
           type="button"
           onClick={() => navigate("/invoices")}
@@ -199,29 +202,47 @@ function InvoiceDetails() {
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-semibold text-slate-900">
+              <h1 className="text-2xl font-semibold text-slate-900 print:text-3xl">
                 {invoice.invoiceNumber}
               </h1>
 
-              <select
-                value={invoice.status}
-                onChange={(event) =>
-                  handleStatusChange(event.target.value as Invoice["status"])
-                }
-                disabled={updatingStatus}
-                className={`rounded-full border-0 px-3 py-1 text-xs font-medium capitalize outline-none ${getStatusClass(
+              {/* Screen status dropdown */}
+              <div className="flex items-center gap-2 print:hidden">
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-medium capitalize ${getStatusClass(
+                    invoice.status,
+                  )}`}
+                >
+                  {invoice.status.replace("_", " ")}
+                </span>
+
+                <select
+                  value={invoice.status}
+                  onChange={(event) =>
+                    handleStatusChange(event.target.value as Invoice["status"])
+                  }
+                  disabled={updatingStatus}
+                  className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 outline-none focus:border-slate-500 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <option value="draft">Draft</option>
+                  <option value="sent">Sent</option>
+                  <option value="paid">Paid</option>
+                  <option value="overdue">Overdue</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+
+              {/* Print-only status */}
+              <span
+                className={`hidden rounded-full px-3 py-1 text-xs font-semibold capitalize print:inline-block ${getStatusClass(
                   invoice.status,
                 )}`}
               >
-                <option value="draft">Draft</option>
-                <option value="sent">Sent</option>
-                <option value="paid">Paid</option>
-                <option value="overdue">Overdue</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
+                {invoice.status.replace("_", " ")}
+              </span>
             </div>
 
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-sm text-slate-500 print:hidden">
               Invoice details and billing information
             </p>
           </div>
@@ -234,6 +255,7 @@ function InvoiceDetails() {
             >
               Print Invoice
             </button>
+
             <button
               type="button"
               onClick={() => navigate(`/invoices/${invoice._id}/edit`)}
@@ -254,16 +276,16 @@ function InvoiceDetails() {
         </div>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-6 print:space-y-4">
         {/* Invoice Information */}
-        <div className="rounded-xl border border-slate-200 bg-white p-6">
-          <h2 className="mb-5 text-lg font-semibold text-slate-900">
+        <div className="rounded-xl border border-slate-200 bg-white p-6 print:break-inside-avoid print:rounded-none print:border print:p-5">
+          <h2 className="mb-5 text-lg font-semibold text-slate-900 print:mb-4">
             Invoice Information
           </h2>
 
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3 print:grid-cols-3 print:gap-4">
             <div>
-              <p className="text-xs font-medium uppercase text-slate-400">
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
                 Invoice Number
               </p>
 
@@ -273,7 +295,7 @@ function InvoiceDetails() {
             </div>
 
             <div>
-              <p className="text-xs font-medium uppercase text-slate-400">
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
                 Issue Date
               </p>
 
@@ -283,7 +305,7 @@ function InvoiceDetails() {
             </div>
 
             <div>
-              <p className="text-xs font-medium uppercase text-slate-400">
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
                 Due Date
               </p>
 
@@ -295,15 +317,15 @@ function InvoiceDetails() {
         </div>
 
         {/* Customer */}
-        <div className="rounded-xl border border-slate-200 bg-white p-6">
-          <h2 className="mb-5 text-lg font-semibold text-slate-900">
-            Customer
+        <div className="rounded-xl border border-slate-200 bg-white p-6 print:break-inside-avoid print:rounded-none print:border print:p-5">
+          <h2 className="mb-5 text-lg font-semibold text-slate-900 print:mb-4">
+            Bill To
           </h2>
 
           {customer ? (
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-3 print:grid-cols-4 print:gap-4">
               <div>
-                <p className="text-xs font-medium uppercase text-slate-400">
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
                   Name
                 </p>
 
@@ -313,17 +335,17 @@ function InvoiceDetails() {
               </div>
 
               <div>
-                <p className="text-xs font-medium uppercase text-slate-400">
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
                   Email
                 </p>
 
-                <p className="mt-1 text-sm text-slate-700">
+                <p className="mt-1 break-words text-sm text-slate-700">
                   {customer.email || "—"}
                 </p>
               </div>
 
               <div>
-                <p className="text-xs font-medium uppercase text-slate-400">
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
                   Phone
                 </p>
 
@@ -333,7 +355,7 @@ function InvoiceDetails() {
               </div>
 
               <div>
-                <p className="text-xs font-medium uppercase text-slate-400">
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
                   Company
                 </p>
 
@@ -350,8 +372,8 @@ function InvoiceDetails() {
         </div>
 
         {/* Items */}
-        <div className="rounded-xl border border-slate-200 bg-white">
-          <div className="border-b border-slate-200 p-6">
+        <div className="rounded-xl border border-slate-200 bg-white print:break-inside-avoid print:rounded-none print:border">
+          <div className="border-b border-slate-200 p-6 print:p-5">
             <h2 className="text-lg font-semibold text-slate-900">
               Invoice Items
             </h2>
@@ -361,19 +383,19 @@ function InvoiceDetails() {
             <table className="w-full">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase text-slate-500">
+                  <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 print:px-5 print:py-2.5">
                     Description
                   </th>
 
-                  <th className="px-6 py-3 text-right text-xs font-semibold uppercase text-slate-500">
+                  <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500 print:px-5 print:py-2.5">
                     Quantity
                   </th>
 
-                  <th className="px-6 py-3 text-right text-xs font-semibold uppercase text-slate-500">
+                  <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500 print:px-5 print:py-2.5">
                     Unit Price
                   </th>
 
-                  <th className="px-6 py-3 text-right text-xs font-semibold uppercase text-slate-500">
+                  <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500 print:px-5 print:py-2.5">
                     Amount
                   </th>
                 </tr>
@@ -382,19 +404,19 @@ function InvoiceDetails() {
               <tbody className="divide-y divide-slate-100">
                 {invoice.items.map((item, index) => (
                   <tr key={index}>
-                    <td className="px-6 py-4 text-sm text-slate-700">
+                    <td className="px-6 py-4 text-sm text-slate-700 print:px-5 print:py-3">
                       {item.description}
                     </td>
 
-                    <td className="px-6 py-4 text-right text-sm text-slate-700">
+                    <td className="px-6 py-4 text-right text-sm text-slate-700 print:px-5 print:py-3">
                       {item.quantity}
                     </td>
 
-                    <td className="px-6 py-4 text-right text-sm text-slate-700">
+                    <td className="px-6 py-4 text-right text-sm text-slate-700 print:px-5 print:py-3">
                       {formatCurrency(item.unitPrice)}
                     </td>
 
-                    <td className="px-6 py-4 text-right text-sm font-medium text-slate-900">
+                    <td className="px-6 py-4 text-right text-sm font-medium text-slate-900 print:px-5 print:py-3">
                       {formatCurrency(item.amount)}
                     </td>
                   </tr>
@@ -404,8 +426,8 @@ function InvoiceDetails() {
           </div>
 
           {/* Summary */}
-          <div className="flex justify-end border-t border-slate-200 p-6">
-            <div className="w-full space-y-3 md:w-80">
+          <div className="flex justify-end border-t border-slate-200 p-6 print:p-5">
+            <div className="w-full space-y-3 md:w-80 print:w-72">
               <div className="flex justify-between text-sm">
                 <span className="text-slate-500">Subtotal</span>
 
@@ -435,7 +457,7 @@ function InvoiceDetails() {
 
         {/* Notes */}
         {invoice.notes && (
-          <div className="rounded-xl border border-slate-200 bg-white p-6">
+          <div className="rounded-xl border border-slate-200 bg-white p-6 print:break-inside-avoid print:rounded-none print:border print:p-5">
             <h2 className="mb-3 text-lg font-semibold text-slate-900">Notes</h2>
 
             <p className="whitespace-pre-wrap text-sm leading-6 text-slate-600">

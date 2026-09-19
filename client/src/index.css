@@ -24,21 +24,31 @@ body {
   min-height: 100vh;
 }
 @media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+
+  html,
   body {
-    background: white;
+    margin: 0;
+    padding: 0;
+    background: white !important;
+  }
+
+  body {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
   .print\:hidden {
     display: none !important;
   }
 
-  .print\:p-0 {
+  .invoice-page {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
     padding: 0 !important;
-  }
-
-  button,
-  select {
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
   }
 }
