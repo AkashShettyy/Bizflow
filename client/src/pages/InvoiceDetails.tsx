@@ -39,6 +39,7 @@ function InvoiceDetails() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
 
   const fetchInvoice = async () => {
     try {
@@ -100,6 +101,30 @@ function InvoiceDetails() {
       currency: "INR",
       maximumFractionDigits: 2,
     }).format(amount);
+  };
+  const handleStatusChange = async (status: Invoice["status"]) => {
+    if (!invoice || status === invoice.status) {
+      return;
+    }
+
+    try {
+      setUpdatingStatus(true);
+      setError("");
+
+      const response = await api.patch<{
+        success: boolean;
+        data: Invoice;
+      }>(`/invoices/${invoice._id}`, {
+        status,
+      });
+
+      setInvoice(response.data.data);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to update invoice status");
+    } finally {
+      setUpdatingStatus(false);
+    }
   };
 
   const handleDelete = async () => {
@@ -176,13 +201,22 @@ function InvoiceDetails() {
                 {invoice.invoiceNumber}
               </h1>
 
-              <span
-                className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusClass(
+              <select
+                value={invoice.status}
+                onChange={(event) =>
+                  handleStatusChange(event.target.value as Invoice["status"])
+                }
+                disabled={updatingStatus}
+                className={`rounded-full border-0 px-3 py-1 text-xs font-medium capitalize outline-none ${getStatusClass(
                   invoice.status,
                 )}`}
               >
-                {invoice.status.replace("_", " ")}
-              </span>
+                <option value="draft">Draft</option>
+                <option value="sent">Sent</option>
+                <option value="paid">Paid</option>
+                <option value="overdue">Overdue</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
             </div>
 
             <p className="mt-1 text-sm text-slate-500">
