@@ -9,6 +9,7 @@ import errorHandler from "./middlewares/error.js";
 import taskRoutes from "./tasks/routes.js";
 import userRoutes from "./users/routes.js";
 import invoiceRoutes from "./invoices/routes.js";
+import dashboardRoutes from "./dashboard/routes.js";
 
 const app = express();
 
@@ -31,6 +32,7 @@ app.use("/api/projects", projectRoutes);
 app.use("/api/tasks", taskRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/invoices", invoiceRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 app.use(errorHandler);
 
