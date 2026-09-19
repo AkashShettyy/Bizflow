@@ -126,7 +126,9 @@ function InvoiceDetails() {
       setUpdatingStatus(false);
     }
   };
-
+  const handlePrint = () => {
+    window.print();
+  };
   const handleDelete = async () => {
     if (!id) {
       return;
@@ -183,13 +185,13 @@ function InvoiceDetails() {
   const customer = getCustomer();
 
   return (
-    <div className="p-6">
+    <div className="p-6 print:p-0">
       {/* Header */}
       <div className="mb-6">
         <button
           type="button"
           onClick={() => navigate("/invoices")}
-          className="mb-3 text-sm text-slate-500 hover:text-slate-900"
+          className="mb-3 text-sm text-slate-500 hover:text-slate-900 print:hidden"
         >
           ← Back to Invoices
         </button>
@@ -224,7 +226,14 @@ function InvoiceDetails() {
             </p>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 print:hidden">
+            <button
+              type="button"
+              onClick={handlePrint}
+              className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Print Invoice
+            </button>
             <button
               type="button"
               onClick={() => navigate(`/invoices/${invoice._id}/edit`)}
