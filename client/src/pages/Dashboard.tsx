@@ -1,4 +1,16 @@
 import { useEffect, useState } from "react";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import api from "../services/api.js";
 
 interface DashboardStats {
@@ -33,8 +45,6 @@ function Dashboard() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        setLoading(true);
-
         const response = await api.get<{
           success: boolean;
           data: DashboardStats;
@@ -62,7 +72,7 @@ function Dashboard() {
 
   if (loading) {
     return (
-      <div className="p-6">
+      <div>
         <p className="text-sm text-slate-500">Loading dashboard...</p>
       </div>
     );
@@ -75,6 +85,55 @@ function Dashboard() {
       </div>
     );
   }
+
+  const taskData = [
+    {
+      name: "Pending",
+      value: stats.tasks.pending,
+    },
+    {
+      name: "Overdue",
+      value: stats.tasks.overdue,
+    },
+    {
+      name: "Completed",
+      value: Math.max(
+        stats.tasks.total - stats.tasks.pending - stats.tasks.overdue,
+        0,
+      ),
+    },
+  ];
+
+  const invoiceData = [
+    {
+      name: "Paid",
+      value: stats.invoices.paid,
+    },
+    {
+      name: "Overdue",
+      value: stats.invoices.overdue,
+    },
+    {
+      name: "Other",
+      value: Math.max(
+        stats.invoices.total - stats.invoices.paid - stats.invoices.overdue,
+        0,
+      ),
+    },
+  ];
+
+  const projectData = [
+    {
+      name: "Total",
+      value: stats.projects.total,
+    },
+    {
+      name: "Active",
+      value: stats.projects.active,
+    },
+  ];
+
+  const chartColors = ["#0f172a", "#f97316", "#10b981"];
 
   return (
     <div className="space-y-6">
@@ -89,7 +148,6 @@ function Dashboard() {
 
       {/* Summary Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {/* Customers */}
         <div className="rounded-xl border border-slate-200 bg-white p-5">
           <p className="text-sm font-medium text-slate-500">Customers</p>
 
@@ -102,7 +160,6 @@ function Dashboard() {
           </p>
         </div>
 
-        {/* Projects */}
         <div className="rounded-xl border border-slate-200 bg-white p-5">
           <p className="text-sm font-medium text-slate-500">Active Projects</p>
 
@@ -115,7 +172,6 @@ function Dashboard() {
           </p>
         </div>
 
-        {/* Tasks */}
         <div className="rounded-xl border border-slate-200 bg-white p-5">
           <p className="text-sm font-medium text-slate-500">Pending Tasks</p>
 
@@ -128,7 +184,6 @@ function Dashboard() {
           </p>
         </div>
 
-        {/* Invoices */}
         <div className="rounded-xl border border-slate-200 bg-white p-5">
           <p className="text-sm font-medium text-slate-500">Total Invoices</p>
 
@@ -141,7 +196,6 @@ function Dashboard() {
           </p>
         </div>
 
-        {/* Paid */}
         <div className="rounded-xl border border-slate-200 bg-white p-5">
           <p className="text-sm font-medium text-slate-500">Paid Amount</p>
 
@@ -154,7 +208,6 @@ function Dashboard() {
           </p>
         </div>
 
-        {/* Outstanding */}
         <div className="rounded-xl border border-slate-200 bg-white p-5">
           <p className="text-sm font-medium text-slate-500">Outstanding</p>
 
@@ -166,50 +219,79 @@ function Dashboard() {
         </div>
       </div>
 
-      {/* Overview */}
+      {/* Charts */}
       <div className="grid gap-6 lg:grid-cols-2">
+        {/* Tasks */}
         <div className="rounded-xl border border-slate-200 bg-white p-6">
           <h2 className="text-lg font-semibold text-slate-900">
             Task Overview
           </h2>
 
-          <div className="mt-5 space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-slate-500">Total Tasks</span>
+          <p className="mt-1 text-sm text-slate-500">
+            Current task distribution
+          </p>
 
-              <span className="font-medium text-slate-900">
-                {stats.tasks.total}
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-slate-500">Pending</span>
-
-              <span className="font-medium text-slate-900">
-                {stats.tasks.pending}
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-slate-500">Overdue</span>
-
-              <span className="font-medium text-orange-600">
-                {stats.tasks.overdue}
-              </span>
-            </div>
+          <div className="mt-6 h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={taskData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis allowDecimals={false} />
+                <Tooltip />
+                <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+                  {taskData.map((_, index) => (
+                    <Cell key={`task-${index}`} fill={chartColors[index]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
 
+        {/* Invoices */}
         <div className="rounded-xl border border-slate-200 bg-white p-6">
           <h2 className="text-lg font-semibold text-slate-900">
             Invoice Overview
           </h2>
 
-          <div className="mt-5 space-y-4">
+          <p className="mt-1 text-sm text-slate-500">
+            Invoice status distribution
+          </p>
+
+          <div className="mt-6 h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={invoiceData}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={90}
+                  label
+                >
+                  {invoiceData.map((_, index) => (
+                    <Cell key={`invoice-${index}`} fill={chartColors[index]} />
+                  ))}
+                </Pie>
+
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      {/* Revenue + Projects */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <div className="rounded-xl border border-slate-200 bg-white p-6">
+          <h2 className="text-lg font-semibold text-slate-900">Revenue</h2>
+
+          <div className="mt-6 space-y-5">
             <div className="flex items-center justify-between">
               <span className="text-sm text-slate-500">Total Revenue</span>
 
-              <span className="font-medium text-slate-900">
+              <span className="font-semibold text-slate-900">
                 {formatCurrency(stats.invoices.totalRevenue)}
               </span>
             </div>
@@ -217,18 +299,36 @@ function Dashboard() {
             <div className="flex items-center justify-between">
               <span className="text-sm text-slate-500">Paid</span>
 
-              <span className="font-medium text-emerald-600">
+              <span className="font-semibold text-emerald-600">
                 {formatCurrency(stats.invoices.paidAmount)}
               </span>
             </div>
 
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between border-t border-slate-100 pt-4">
               <span className="text-sm text-slate-500">Outstanding</span>
 
-              <span className="font-medium text-orange-600">
+              <span className="font-semibold text-orange-600">
                 {formatCurrency(stats.invoices.outstandingAmount)}
               </span>
             </div>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-slate-200 bg-white p-6">
+          <h2 className="text-lg font-semibold text-slate-900">Projects</h2>
+
+          <p className="mt-1 text-sm text-slate-500">Project activity</p>
+
+          <div className="mt-6 h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={projectData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis allowDecimals={false} />
+                <Tooltip />
+                <Bar dataKey="value" fill="#0f172a" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
       </div>
