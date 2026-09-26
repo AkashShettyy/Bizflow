@@ -1,9 +1,12 @@
+import mongoose from "mongoose";
 import Customer from "../models/customer.js";
 import Project from "../models/project.js";
 import Task from "../models/task.js";
 import Invoice from "../models/invoice.js";
 
 export const getReports = async (tenantId: string) => {
+  const tenantObjectId = new mongoose.Types.ObjectId(tenantId);
+
   const [
     customers,
     projects,
@@ -11,7 +14,7 @@ export const getReports = async (tenantId: string) => {
     invoices,
   ] = await Promise.all([
     Customer.aggregate([
-      { $match: { tenant: tenantId } },
+      { $match: { tenant: tenantObjectId } },
       {
         $group: {
           _id: "$status",
@@ -21,7 +24,7 @@ export const getReports = async (tenantId: string) => {
     ]),
 
     Project.aggregate([
-      { $match: { tenant: tenantId } },
+      { $match: { tenant: tenantObjectId } },
       {
         $group: {
           _id: "$status",
@@ -31,7 +34,7 @@ export const getReports = async (tenantId: string) => {
     ]),
 
     Task.aggregate([
-      { $match: { tenant: tenantId } },
+      { $match: { tenant: tenantObjectId } },
       {
         $group: {
           _id: "$status",
@@ -41,7 +44,7 @@ export const getReports = async (tenantId: string) => {
     ]),
 
     Invoice.aggregate([
-      { $match: { tenant: tenantId } },
+      { $match: { tenant: tenantObjectId } },
       {
         $group: {
           _id: "$status",
@@ -53,7 +56,7 @@ export const getReports = async (tenantId: string) => {
   ]);
 
   const invoiceSummary = await Invoice.aggregate([
-    { $match: { tenant: tenantId } },
+    { $match: { tenant: tenantObjectId } },
     {
       $group: {
         _id: null,
@@ -69,16 +72,16 @@ export const getReports = async (tenantId: string) => {
           },
         },
         outstandingAmount: {
-          $sum: {
-            $cond: [
-              {
-                $in: ["$status", ["sent", "overdue"]],
-              },
-              "$total",
-              0,
-            ],
-          },
-        },
+  $sum: {
+    $cond: [
+      {
+        $in: ["$status", ["sent", "overdue"]],
+      },
+      "$total",
+      0,
+    ],
+  },
+},
       },
     },
   ]);
