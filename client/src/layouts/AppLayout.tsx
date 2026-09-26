@@ -29,6 +29,10 @@ function AppLayout() {
       name: "Reports",
       path: "/reports",
     },
+    {
+      name: "Users",
+      path: "/users",
+    },
   ];
 
   return (
