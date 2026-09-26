@@ -7,12 +7,7 @@ import Invoice from "../models/invoice.js";
 export const getReports = async (tenantId: string) => {
   const tenantObjectId = new mongoose.Types.ObjectId(tenantId);
 
-  const [
-    customers,
-    projects,
-    tasks,
-    invoices,
-  ] = await Promise.all([
+  const [customers, projects, tasks, invoices] = await Promise.all([
     Customer.aggregate([
       { $match: { tenant: tenantObjectId } },
       {
@@ -64,24 +59,20 @@ export const getReports = async (tenantId: string) => {
         totalRevenue: { $sum: "$total" },
         paidAmount: {
           $sum: {
+            $cond: [{ $eq: ["$status", "paid"] }, "$total", 0],
+          },
+        },
+        outstandingAmount: {
+          $sum: {
             $cond: [
-              { $eq: ["$status", "paid"] },
+              {
+                $in: ["$status", ["sent", "overdue"]],
+              },
               "$total",
               0,
             ],
           },
         },
-        outstandingAmount: {
-  $sum: {
-    $cond: [
-      {
-        $in: ["$status", ["sent", "overdue"]],
-      },
-      "$total",
-      0,
-    ],
-  },
-},
       },
     },
   ]);
@@ -91,12 +82,11 @@ export const getReports = async (tenantId: string) => {
     projects,
     tasks,
     invoices,
-    invoiceSummary:
-      invoiceSummary[0] ?? {
-        totalInvoices: 0,
-        totalRevenue: 0,
-        paidAmount: 0,
-        outstandingAmount: 0,
-      },
+    invoiceSummary: invoiceSummary[0] ?? {
+      totalInvoices: 0,
+      totalRevenue: 0,
+      paidAmount: 0,
+      outstandingAmount: 0,
+    },
   };
 };
