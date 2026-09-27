@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
+
 import Customer from "../models/customer.js";
+import { createAuditLog } from "../audit/service.js";
 
 interface CreateCustomerInput {
   name: string;
@@ -22,11 +24,26 @@ export const createCustomer = async (
   userId: string,
   input: CreateCustomerInput,
 ) => {
-  return Customer.create({
+  const customer = await Customer.create({
     tenant: new mongoose.Types.ObjectId(tenantId),
     createdBy: new mongoose.Types.ObjectId(userId),
     ...input,
   });
+
+  await createAuditLog({
+    tenantId,
+    userId,
+    action: "CREATE",
+    resource: "customer",
+    resourceId: customer._id.toString(),
+    details: {
+      name: customer.name,
+      email: customer.email,
+      company: customer.company,
+    },
+  });
+
+  return customer;
 };
 
 export const getCustomers = async (tenantId: string) => {
@@ -37,10 +54,7 @@ export const getCustomers = async (tenantId: string) => {
     .lean();
 };
 
-export const getCustomerById = async (
-  tenantId: string,
-  customerId: string,
-) => {
+export const getCustomerById = async (tenantId: string, customerId: string) => {
   return Customer.findOne({
     _id: customerId,
     tenant: tenantId,
@@ -49,10 +63,11 @@ export const getCustomerById = async (
 
 export const updateCustomer = async (
   tenantId: string,
+  userId: string,
   customerId: string,
   input: UpdateCustomerInput,
 ) => {
-  return Customer.findOneAndUpdate(
+  const customer = await Customer.findOneAndUpdate(
     {
       _id: customerId,
       tenant: tenantId,
@@ -63,14 +78,53 @@ export const updateCustomer = async (
       runValidators: true,
     },
   ).lean();
+
+  if (!customer) {
+    throw new Error("Customer not found");
+  }
+
+  await createAuditLog({
+    tenantId,
+    userId,
+    action: "UPDATE",
+    resource: "customer",
+    resourceId: customer._id.toString(),
+    details: {
+      name: customer.name,
+      email: customer.email,
+      company: customer.company,
+    },
+  });
+
+  return customer;
 };
 
 export const deleteCustomer = async (
   tenantId: string,
+  userId: string,
   customerId: string,
 ) => {
-  return Customer.findOneAndDelete({
+  const customer = await Customer.findOneAndDelete({
     _id: customerId,
     tenant: tenantId,
   });
+
+  if (!customer) {
+    throw new Error("Customer not found");
+  }
+
+  await createAuditLog({
+    tenantId,
+    userId,
+    action: "DELETE",
+    resource: "customer",
+    resourceId: customer._id.toString(),
+    details: {
+      name: customer.name,
+      email: customer.email,
+      company: customer.company,
+    },
+  });
+
+  return customer;
 };

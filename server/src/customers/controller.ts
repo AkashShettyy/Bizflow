@@ -7,10 +7,7 @@ import {
   getCustomers,
   updateCustomer,
 } from "./service.js";
-import {
-  createCustomerSchema,
-  updateCustomerSchema,
-} from "./validation.js";
+import { createCustomerSchema, updateCustomerSchema } from "./validation.js";
 
 export const create = async (
   req: TenantRequest,
@@ -18,11 +15,7 @@ export const create = async (
 ): Promise<void> => {
   const input = createCustomerSchema.parse(req.body);
 
-  const customer = await createCustomer(
-    req.tenantId!,
-    req.user!.userId,
-    input,
-  );
+  const customer = await createCustomer(req.tenantId!, req.user!.userId, input);
 
   res.status(201).json({
     success: true,
@@ -74,7 +67,8 @@ export const update = async (
 
   const customer = await updateCustomer(
     req.tenantId!,
-    req.params.id as string,
+    req.user!.userId,
+    String(req.params.id),
     input,
   );
 
@@ -97,10 +91,7 @@ export const remove = async (
   req: TenantRequest,
   res: Response,
 ): Promise<void> => {
-  const customer = await deleteCustomer(
-    req.tenantId!,
-    req.params.id as string,
-  );
+  const customer = await deleteCustomer(req.tenantId!, req.params.id as string);
 
   if (!customer) {
     res.status(404).json({
