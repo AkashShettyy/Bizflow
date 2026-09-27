@@ -1,10 +1,8 @@
 import Task from "../models/task.js";
 import Project from "../models/project.js";
 import Membership from "../models/membership.js";
-import type {
-  CreateTaskInput,
-  UpdateTaskInput,
-} from "./validation.js";
+import { createAuditLog } from "../audit/service.js";
+import type { CreateTaskInput, UpdateTaskInput } from "./validation.js";
 
 export const createTask = async (
   tenantId: string,
@@ -34,11 +32,26 @@ export const createTask = async (
     }
   }
 
-  return Task.create({
+  const task = await Task.create({
     tenant: tenantId,
     createdBy: userId,
     ...input,
   });
+
+  await createAuditLog({
+    tenantId,
+    userId,
+    action: "CREATE",
+    resource: "task",
+    resourceId: task._id.toString(),
+    details: {
+      title: task.title,
+      status: task.status,
+      priority: task.priority,
+    },
+  });
+
+  return task;
 };
 
 export const getTasks = async (tenantId: string) => {
@@ -52,10 +65,7 @@ export const getTasks = async (tenantId: string) => {
     .lean();
 };
 
-export const getTaskById = async (
-  tenantId: string,
-  taskId: string,
-) => {
+export const getTaskById = async (tenantId: string, taskId: string) => {
   return Task.findOne({
     _id: taskId,
     tenant: tenantId,
@@ -68,6 +78,7 @@ export const getTaskById = async (
 
 export const updateTask = async (
   tenantId: string,
+  userId: string,
   taskId: string,
   input: UpdateTaskInput,
 ) => {
@@ -98,7 +109,7 @@ export const updateTask = async (
     }
   }
 
-  return Task.findOneAndUpdate(
+  const task = await Task.findOneAndUpdate(
     {
       _id: taskId,
       tenant: tenantId,
@@ -113,14 +124,51 @@ export const updateTask = async (
     .populate("assignedTo", "name email")
     .populate("createdBy", "name email")
     .lean();
+
+  if (!task) {
+    throw new Error("Task not found");
+  }
+
+  await createAuditLog({
+    tenantId,
+    userId,
+    action: "UPDATE",
+    resource: "task",
+    resourceId: task._id.toString(),
+    details: {
+      title: task.title,
+      status: task.status,
+      priority: task.priority,
+    },
+  });
+
+  return task;
 };
 
 export const deleteTask = async (
   tenantId: string,
+  userId: string,
   taskId: string,
 ) => {
-  return Task.findOneAndDelete({
+  const task = await Task.findOneAndDelete({
     _id: taskId,
     tenant: tenantId,
   });
+
+  if (!task) {
+    throw new Error("Task not found");
+  }
+
+  await createAuditLog({
+    tenantId,
+    userId,
+    action: "DELETE",
+    resource: "task",
+    resourceId: task._id.toString(),
+    details: {
+      title: task.title,
+    },
+  });
+
+  return task;
 };

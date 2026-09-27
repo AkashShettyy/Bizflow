@@ -6,10 +6,7 @@ import {
   getTasks,
   updateTask,
 } from "./service.js";
-import {
-  createTaskSchema,
-  updateTaskSchema,
-} from "./validation.js";
+import { createTaskSchema, updateTaskSchema } from "./validation.js";
 import type { TenantRequest } from "../middlewares/tenant.js";
 
 export const create = async (
@@ -18,11 +15,7 @@ export const create = async (
 ): Promise<void> => {
   const input = createTaskSchema.parse(req.body);
 
-  const task = await createTask(
-    req.tenantId!,
-    req.user!.userId,
-    input,
-  );
+  const task = await createTask(req.tenantId!, req.user!.userId, input);
 
   res.status(201).json({
     success: true,
@@ -47,10 +40,7 @@ export const getOne = async (
   req: TenantRequest,
   res: Response,
 ): Promise<void> => {
-  const task = await getTaskById(
-    req.tenantId!,
-    req.params.id as string,
-  );
+  const task = await getTaskById(req.tenantId!, req.params.id as string);
 
   if (!task) {
     res.status(404).json({
@@ -74,7 +64,8 @@ export const update = async (
 
   const task = await updateTask(
     req.tenantId!,
-    req.params.id as string,
+    req.user!.userId,
+    String(req.params.id),
     input,
   );
 
@@ -99,7 +90,8 @@ export const remove = async (
 ): Promise<void> => {
   const task = await deleteTask(
     req.tenantId!,
-    req.params.id as string,
+    req.user!.userId,
+    String(req.params.id),
   );
 
   if (!task) {
