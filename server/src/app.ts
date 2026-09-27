@@ -11,6 +11,7 @@ import userRoutes from "./users/routes.js";
 import invoiceRoutes from "./invoices/routes.js";
 import dashboardRoutes from "./dashboard/routes.js";
 import reportRoutes from "./reports/routes.js";
+import permissionRoutes from "./permissions/routes.js";
 
 const app = express();
 
@@ -35,6 +36,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/invoices", invoiceRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/reports", reportRoutes);
+app.use("/api/permissions", permissionRoutes);
 
 app.use(errorHandler);
 
