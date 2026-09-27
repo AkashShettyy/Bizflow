@@ -37,6 +37,10 @@ function AppLayout() {
       name: "Role & Permissions",
       path: "/role-permissions",
     },
+    {
+      name: "Audit Logs",
+      path: "/audit-logs",
+    },
   ];
 
   return (

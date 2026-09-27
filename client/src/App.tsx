@@ -15,6 +15,7 @@ import InvoiceDetails from "./pages/InvoiceDetails.js";
 import Reports from "./pages/Reports.js";
 import Users from "./pages/Users.js";
 import RolePermissions from "./pages/RolePermissions.js";
+import AuditLogs from "./pages/AuditLogs.js";
 function App() {
   return (
     <BrowserRouter>
@@ -39,6 +40,7 @@ function App() {
             <Route path="/reports" element={<Reports />} />
             <Route path="/users" element={<Users />} />
             <Route path="/role-permissions" element={<RolePermissions />} />
+            <Route path="/audit-logs" element={<AuditLogs />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/login" replace />} />
