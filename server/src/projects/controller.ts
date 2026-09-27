@@ -7,10 +7,7 @@ import {
   getProjects,
   updateProject,
 } from "./service.js";
-import {
-  createProjectSchema,
-  updateProjectSchema,
-} from "./validation.js";
+import { createProjectSchema, updateProjectSchema } from "./validation.js";
 
 export const create = async (
   req: TenantRequest,
@@ -18,11 +15,7 @@ export const create = async (
 ): Promise<void> => {
   const input = createProjectSchema.parse(req.body);
 
-  const project = await createProject(
-    req.tenantId!,
-    req.user!.userId,
-    input,
-  );
+  const project = await createProject(req.tenantId!, req.user!.userId, input);
 
   res.status(201).json({
     success: true,
@@ -47,10 +40,7 @@ export const getOne = async (
   req: TenantRequest,
   res: Response,
 ): Promise<void> => {
-  const project = await getProjectById(
-    req.tenantId!,
-    req.params.id as string,
-  );
+  const project = await getProjectById(req.tenantId!, req.params.id as string);
 
   if (!project) {
     res.status(404).json({
@@ -74,7 +64,8 @@ export const update = async (
 
   const project = await updateProject(
     req.tenantId!,
-    req.params.id as string,
+    req.user!.userId,
+    String(req.params.id),
     input,
   );
 
@@ -99,7 +90,8 @@ export const remove = async (
 ): Promise<void> => {
   const project = await deleteProject(
     req.tenantId!,
-    req.params.id as string,
+    req.user!.userId,
+    String(req.params.id),
   );
 
   if (!project) {

@@ -91,7 +91,11 @@ export const remove = async (
   req: TenantRequest,
   res: Response,
 ): Promise<void> => {
-  const customer = await deleteCustomer(req.tenantId!, req.params.id as string);
+  const customer = await deleteCustomer(
+    req.tenantId!,
+    req.user!.userId,
+    String(req.params.id),
+  );
 
   if (!customer) {
     res.status(404).json({
