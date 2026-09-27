@@ -1,9 +1,6 @@
 import type { Response } from "express";
 import type { TenantRequest } from "../middlewares/tenant.js";
-import {
-  createInvoiceSchema,
-  updateInvoiceSchema,
-} from "./validation.js";
+import { createInvoiceSchema, updateInvoiceSchema } from "./validation.js";
 import {
   createInvoice,
   getInvoices,
@@ -12,17 +9,10 @@ import {
   deleteInvoice,
 } from "./service.js";
 
-export const create = async (
-  req: TenantRequest,
-  res: Response
-) => {
+export const create = async (req: TenantRequest, res: Response) => {
   const input = createInvoiceSchema.parse(req.body);
 
-  const invoice = await createInvoice(
-    req.tenantId!,
-    req.user!.userId,
-    input
-  );
+  const invoice = await createInvoice(req.tenantId!, req.user!.userId, input);
 
   res.status(201).json({
     success: true,
@@ -30,10 +20,7 @@ export const create = async (
   });
 };
 
-export const getAll = async (
-  req: TenantRequest,
-  res: Response
-) => {
+export const getAll = async (req: TenantRequest, res: Response) => {
   const invoices = await getInvoices(req.tenantId!);
 
   res.json({
@@ -42,14 +29,8 @@ export const getAll = async (
   });
 };
 
-export const getOne = async (
-  req: TenantRequest,
-  res: Response
-) => {
-  const invoice = await getInvoiceById(
-    req.tenantId!,
-    req.params.id as string
-  );
+export const getOne = async (req: TenantRequest, res: Response) => {
+  const invoice = await getInvoiceById(req.tenantId!, req.params.id as string);
 
   if (!invoice) {
     res.status(404).json({
@@ -65,16 +46,14 @@ export const getOne = async (
   });
 };
 
-export const update = async (
-  req: TenantRequest,
-  res: Response
-) => {
+export const update = async (req: TenantRequest, res: Response) => {
   const input = updateInvoiceSchema.parse(req.body);
 
   const invoice = await updateInvoice(
     req.tenantId!,
-    req.params.id as string,
-    input
+    req.user!.userId,
+    String(req.params.id),
+    input,
   );
 
   if (!invoice) {
@@ -91,13 +70,11 @@ export const update = async (
   });
 };
 
-export const remove = async (
-  req: TenantRequest,
-  res: Response
-) => {
+export const remove = async (req: TenantRequest, res: Response) => {
   const invoice = await deleteInvoice(
     req.tenantId!,
-    req.params.id as string
+    req.user!.userId,
+    String(req.params.id),
   );
 
   if (!invoice) {
