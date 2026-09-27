@@ -33,6 +33,10 @@ function AppLayout() {
       name: "Users",
       path: "/users",
     },
+    {
+      name: "Role & Permissions",
+      path: "/role-permissions",
+    },
   ];
 
   return (
