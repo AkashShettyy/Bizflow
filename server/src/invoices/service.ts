@@ -2,7 +2,7 @@ import Invoice from "../models/invoice.js";
 import Customer from "../models/customer.js";
 import { createAuditLog } from "../audit/service.js";
 import type { CreateInvoiceInput, UpdateInvoiceInput } from "./validation.js";
-
+import { createNotification } from "../notifications/service.js";
 const calculateTotals = (items: CreateInvoiceInput["items"], tax: number) => {
   const calculatedItems = items.map((item) => ({
     ...item,
@@ -148,7 +148,24 @@ export const updateInvoice = async (
   if (!invoice) {
     throw new Error("Invoice not found");
   }
+  if (input.status !== undefined && input.status !== existingInvoice.status) {
+    const notificationType =
+      input.status === "paid"
+        ? "success"
+        : input.status === "overdue"
+          ? "warning"
+          : "info";
 
+    await createNotification({
+      tenantId,
+      userId: existingInvoice.createdBy.toString(),
+      title: "Invoice Status Updated",
+      message: `Invoice ${invoice.invoiceNumber} is now ${input.status}.`,
+      type: notificationType,
+      resource: "invoice",
+      resourceId: invoice._id.toString(),
+    });
+  }
   await createAuditLog({
     tenantId,
     userId,
