@@ -3,7 +3,7 @@ import Project from "../models/project.js";
 import Membership from "../models/membership.js";
 import { createAuditLog } from "../audit/service.js";
 import type { CreateTaskInput, UpdateTaskInput } from "./validation.js";
-
+import { createNotification } from "../notifications/service.js";
 export const createTask = async (
   tenantId: string,
   userId: string,
@@ -37,7 +37,17 @@ export const createTask = async (
     createdBy: userId,
     ...input,
   });
-
+  if (input.assignedTo) {
+    await createNotification({
+      tenantId,
+      userId: input.assignedTo,
+      title: "New Task Assigned",
+      message: `You have been assigned a new task: ${task.title}`,
+      type: "info",
+      resource: "task",
+      resourceId: task._id.toString(),
+    });
+  }
   await createAuditLog({
     tenantId,
     userId,
@@ -128,7 +138,17 @@ export const updateTask = async (
   if (!task) {
     throw new Error("Task not found");
   }
-
+  if (input.assignedTo) {
+    await createNotification({
+      tenantId,
+      userId: input.assignedTo,
+      title: "Task Assigned",
+      message: `You have been assigned a task: ${task.title}`,
+      type: "info",
+      resource: "task",
+      resourceId: task._id.toString(),
+    });
+  }
   await createAuditLog({
     tenantId,
     userId,
