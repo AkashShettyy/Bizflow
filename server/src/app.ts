@@ -13,6 +13,7 @@ import dashboardRoutes from "./dashboard/routes.js";
 import reportRoutes from "./reports/routes.js";
 import permissionRoutes from "./permissions/routes.js";
 import auditRoutes from "./audit/routes.js";
+import notificationRoutes from "./notifications/routes.js";
 const app = express();
 
 app.use(helmet());
@@ -38,6 +39,7 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/permissions", permissionRoutes);
 app.use("/api/audit-logs", auditRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 app.use(errorHandler);
 
