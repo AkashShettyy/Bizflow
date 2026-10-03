@@ -76,6 +76,14 @@ function AppLayout() {
 
   useEffect(() => {
     fetchNotifications();
+
+    const interval = setInterval(() => {
+      fetchNotifications();
+    }, 30000);
+
+    return () => {
+      clearInterval(interval);
+    };
   }, []);
 
   const handleMarkAsRead = async (id: string) => {
